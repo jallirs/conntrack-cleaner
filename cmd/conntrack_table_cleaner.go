@@ -28,9 +28,9 @@ type connectionInfoStore struct {
 }
 
 func deleteStaleConnEntry(sourceIP, destinationIP string) {
-	_, err := exec.Command("conntrack", "-D", "-p", "tcp", "-s", sourceIP, "-d", destinationIP).CombinedOutput()
+	_, err := exec.Command("conntrack", "-D", "-s", sourceIP, "-d", destinationIP, "--sport", sourcePort, "--dport", destinationPort).CombinedOutput()
 	if err != nil {
-		klog.Errorf("error deleting conntrack entry : %s", err)
+		klog.V(4).Errorf("error deleting conntrack entry : %s", err)
 	}
 	klog.V(4).Infof("conntrack entry deleted successfully for sourceIP: %s, destinationIP: %s", sourceIP, destinationIP)
 }

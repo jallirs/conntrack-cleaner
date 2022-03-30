@@ -25,10 +25,10 @@ REGISTRY ?= gcr.io/k8s-staging-networking
 ARCH ?= amd64
 
 # This version-strategy uses git tags to set the version string
-VERSION := $(shell git describe --tags --always --dirty)
+#VERSION := $(shell git describe --tags --always --dirty)
 #
 # This version-strategy uses a manual value to set the version string
-#VERSION := 1.2.3
+VERSION := 1.2.3
 
 ###
 ### These variables should not need tweaking.
@@ -49,18 +49,21 @@ ifeq ($(INTERACTIVE), 1)
 endif
 
 # Set default base image dynamically for each arch
-ifeq ($(ARCH),amd64)
-    BASEIMAGE?=k8s.gcr.io/debian-iptables-amd64:v12.0.1
-endif
-ifeq ($(ARCH),arm)
-    BASEIMAGE?=k8s.gcr.io/debian-iptables-arm:v12.0.1
-endif
-ifeq ($(ARCH),arm64)
-    BASEIMAGE?=k8s.gcr.io/debian-iptables-arm64:v12.0.1
-endif
-ifeq ($(ARCH),ppc64le)
-    BASEIMAGE?=k8s.gcr.io/debian-iptables-ppc64le:v12.0.1
-endif
+#ifeq ($(ARCH),amd64)
+#    BASEIMAGE?=k8s.gcr.io/debian-iptables-amd64:v12.0.1
+#endif
+#ifeq ($(ARCH),arm)
+#    BASEIMAGE?=k8s.gcr.io/debian-iptables-arm:v12.0.1
+#endif
+#ifeq ($(ARCH),arm64)
+#    BASEIMAGE?=k8s.gcr.io/debian-iptables-arm64:v12.0.1
+#endif
+#ifeq ($(ARCH),ppc64le)
+#    BASEIMAGE?=k8s.gcr.io/debian-iptables-ppc64le:v12.0.1
+#endif
+
+ARCH := amd64
+BASEIMAGE := k8s.gcr.io/debian-iptables-amd64:v12.0.1
 
 IMAGE := $(REGISTRY)/$(BIN)-$(ARCH)
 MANIFEST_IMAGE := $(REGISTRY)/$(BIN)
@@ -70,17 +73,17 @@ BUILD_IMAGE ?= golang:1.16-alpine
 # If you want to build all binaries, see the 'all-build' rule.
 # If you want to build all containers, see the 'all-container' rule.
 # If you want to build AND push all containers, see the 'all-push' rule.
-all: build
+all: container
 
 build-%:
-        @$(MAKE) --no-print-directory ARCH=$* build
+	@$(MAKE) --no-print-directory ARCH=$* build
 
 build: bin/$(ARCH)/$(BIN)
 
 bin/$(ARCH)/$(BIN): build-dirs
-        @echo "building: $@"
-        @docker pull $(BUILD_IMAGE)
-        @docker run                                                            \
+	@echo "building: $@"
+	@docker pull $(BUILD_IMAGE)
+	@docker run                                                            \
             -$(TTY)i                                                           \
             -u $$(id -u):$$(id -g)                                             \
             -v $$(pwd)/.go:/go                                                 \
@@ -98,25 +101,25 @@ bin/$(ARCH)/$(BIN): build-dirs
             "
 
 container-%:
-        @$(MAKE) --no-print-directory ARCH=$* container
+	@$(MAKE) --no-print-directory ARCH=$* container
 
 DOTFILE_IMAGE = $(subst :,_,$(subst /,_,$(IMAGE))-$(VERSION))
 
-container: .container-$(DOTFILE_IMAGE) container-name
+container: .container-$(DOTFILE_IMAGE)
 .container-$(DOTFILE_IMAGE): bin/$(ARCH)/$(BIN) Dockerfile.in
-        @sed \
+	@sed \
             -e 's|ARG_BIN|$(BIN)|g' \
             -e 's|ARG_ARCH|$(ARCH)|g' \
             -e 's|ARG_FROM|$(BASEIMAGE)|g' \
             Dockerfile.in > .dockerfile-$(ARCH)
-        @docker build --pull -t $(IMAGE):$(VERSION) -f .dockerfile-$(ARCH) .
-        @docker images -q $(IMAGE):$(VERSION) > $@
+	@docker build --pull -t $(IMAGE):$(VERSION) -f .dockerfile-$(ARCH) .
+	@docker images -q $(IMAGE):$(VERSION) > $@
 
 build-dirs:
-        @mkdir -p bin/$(ARCH)
-        @mkdir -p .go/src/$(PKG) .go/pkg .go/bin .go/std/$(ARCH)
+	@mkdir -p bin/$(ARCH)
+	@mkdir -p .go/src/$(PKG) .go/pkg .go/bin .go/std/$(ARCH)
 
 clean: bin-clean
 
 bin-clean:
-        rm -rf .go bin
+	rm -rf .go bin

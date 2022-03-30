@@ -96,7 +96,7 @@ func (c *conntrackCleaner) processConntrackTable(table *bytes.Buffer) {
 
 func executeCmd(output *bytes.Buffer) error {
 	var err error
-	tcpConnList := exec.Command("conntrack", "-L", "-p", "tcp")
+	tcpConnList := exec.Command("conntrack", "-L")
 	grep := exec.Command("grep", "UNREPLIED")
 	grep.Stdin, err = tcpConnList.StdoutPipe()
 	if err != nil {
