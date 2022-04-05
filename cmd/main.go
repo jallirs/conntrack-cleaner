@@ -46,15 +46,15 @@ func getConntrackDumpFrequency() time.Duration {
 }
 
 func getThreshold() int {
-	defaultThreshold := 3
+	defaultThreshold := 0
 	threshold, ok := os.LookupEnv("CONNECTION_RENEWAL_THRESHOLD")
 	if !ok {
-		klog.Warning("CONNECTION_RENEWAL_THRESHOLD env variable not set in podspec. Taking default value as 3")
+		klog.Warning("CONNECTION_RENEWAL_THRESHOLD env variable not set in podspec. Taking default value as 0")
 		return defaultThreshold
 	}
 	configuredThreshold, err := strconv.Atoi(threshold)
 	if err != nil {
-		klog.Warning("invalid value given for CONNECTION_RENEWAL_THRESHOLD in podspec. Taking default value as 3")
+		klog.Warning("invalid value given for CONNECTION_RENEWAL_THRESHOLD in podspec. Taking default value as 0")
 		return defaultThreshold
 	}
 	return configuredThreshold

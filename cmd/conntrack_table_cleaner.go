@@ -27,12 +27,13 @@ type connectionInfoStore struct {
 	connEntry                connectionInfo
 }
 
-func deleteStaleConnEntry(sourceIP, destinationIP string, sourcePort string, destinationPort string) {
-	_, err := exec.Command("conntrack", "-D", "-s", sourceIP, "-d", destinationIP, "--sport", sourcePort, "--dport", destinationPort).CombinedOutput()
+func deleteStaleConnEntry(sourceIP string, destinationIP string) {
+	_, err := exec.Command("conntrack", "-D", "-s", sourceIP, "-d", destinationIP ).CombinedOutput()
 	if err != nil {
 		klog.Errorf("error deleting conntrack entry : %s", err)
 	}
-	klog.V(4).Infof("conntrack entry deleted successfully for sourceIP: %s, destinationIP: %s", sourceIP, destinationIP)
+	klog.Warning("conntrack entry deleted successfully for sourceIP: %s, destinationIP: %s", sourceIP, destinationIP)
+	//klog.V(1).Infof("conntrack entry deleted successfully for sourceIP: %s, destinationIP: %s", sourceIP, destinationIP)
 }
 
 func getKeyForConnInfo(connInfo connectionInfo) string {
@@ -52,7 +53,7 @@ func (c *conntrackCleaner) cleanStaleConntrackEntries(connInfo connectionInfo) {
 	if connInfo.expiryTime >= value.connEntry.expiryTime {
 		value.staleConnectionMarkCount++
 		if value.staleConnectionMarkCount > c.connRenewalThreshold {
-			deleteStaleConnEntry(connInfo.sourceIP, connInfo.destinationIP, connInfo.sourcePort, connInfo.destinationPort)
+			deleteStaleConnEntry(connInfo.sourceIP, connInfo.destinationIP)
 			delete(c.connectionMap, key)
 		} else {
 			c.connectionMap[key] = value

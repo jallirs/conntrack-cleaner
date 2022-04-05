@@ -13,16 +13,22 @@ spec:
         k8s-app: conntrack-cleaner-agent
     spec:
       hostNetwork: true
+      priorityClassName: system-node-critical
       containers:
         - name: conntrack-cleaner-agent
-          image: hanamantagoud/conntrack-cleaner:v0.1
+          image:  gcr.io/k8s-staging-networking/conntrack-cleaner-amd64:1.2.3
           env:
             # Values for CONNTRACK_TABLE_DUMP_FREQUENCY should contain duration such as 1s,100ms.
             # NOTE: Dont set values in nonosecond (ns), microsecond(ms).
             - name: CONNTRACK_TABLE_DUMP_FREQUENCY
               value: "1s"
-            - name: CONNECTION_RENEWAL_THRESHOLD
-              value: "3"
+              # - name: CONNECTION_RENEWAL_THRESHOLD
+              #value: "3"
+          resources:
+            limits:
+              cpu: 70m
+            requests:
+              cpu: 27m
           securityContext:
             privileged: false
             capabilities:

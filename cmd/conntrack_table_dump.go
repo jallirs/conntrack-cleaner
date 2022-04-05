@@ -46,6 +46,7 @@ type connectionInfo struct {
 	destinationIP   string
 	sourcePort      string
 	destinationPort string
+	protocol        string
 }
 
 func newConntrackCleaner(frequency time.Duration, threshold int) *conntrackCleaner {
@@ -57,12 +58,32 @@ func newConntrackCleaner(frequency time.Duration, threshold int) *conntrackClean
 	}
 }
 
-func extractConnInfo(parsedEntry []string) (*connectionInfo, error) {
+func extractConnInfo(parsedEntry []string, entryLen int) (*connectionInfo, error) {
+	isUdp := contains(parsedEntry, "udp")
+	//klog.Errorf("parsed entry 2 is : %v isUDP is %v", parsedEntry[2], strconv.FormatBool(isUdp))
+	//for index, entry := range parsedEntry {
+	//    klog.Errorf("parsed entry %v is : %v", index, entry)
+	//}
 	expTime, err := strconv.Atoi(parsedEntry[7])
 	if err != nil {
 		return nil, err
 	}
+	// [udp      17 13 src=0.0.0.0 dst=255.255.255.255 sport=68 dport=67 [UNREPLIED] src=255.255.255.255 dst=0.0.0.0 sport=67 dport=68 mark=0 use=1]
+    // [tcp      6 86 SYN_SENT src=10.163.68.59 dst=10.163.221.95 sport=55162 dport=14250 [UNREPLIED] src=10.163.221.95 dst=10.163.68.59 sport=14250 dport=55162 mark=0 use=1]
+
+	//klog.Errorf("string is : %v", parsedEntry)
+	if isUdp == true {
+		return &connectionInfo{
+			protocol:        "udp",
+			expiryTime:      expTime,
+			sourceIP:        strings.Split(parsedEntry[8], sourceIPStr)[1],
+			destinationIP:   strings.Split(parsedEntry[9], destinationIPStr)[1],
+			sourcePort:      strings.Split(parsedEntry[10], sourcePortStr)[1],
+			destinationPort: strings.Split(parsedEntry[11], destinationPortStr)[1],
+		}, nil
+	}
 	return &connectionInfo{
+		protocol:        "tcp",
 		expiryTime:      expTime,
 		sourceIP:        strings.Split(parsedEntry[9], sourceIPStr)[1],
 		destinationIP:   strings.Split(parsedEntry[10], destinationIPStr)[1],
@@ -70,6 +91,15 @@ func extractConnInfo(parsedEntry []string) (*connectionInfo, error) {
 		destinationPort: strings.Split(parsedEntry[12], destinationPortStr)[1],
 	}, nil
 }
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+	  if v == str {
+		return true
+	  }
+	}
+	return false
+  }
 
 func parseConntrackEntry(entry string) []string {
 	return strings.Split(entry, " ")
@@ -83,8 +113,9 @@ func (c *conntrackCleaner) processConntrackTable(table *bytes.Buffer) {
 	entryList := parseConntrackTable(table.String())
 	for _, entry := range entryList {
 		if len(entry) != 0 {
+			entrylength := len(entry)
 			parsedEntry := parseConntrackEntry(entry)
-			connInfo, err := extractConnInfo(parsedEntry)
+			connInfo, err := extractConnInfo(parsedEntry, entrylength)
 			if err != nil {
 				klog.Errorf("error extracting connection info : %v", err)
 				continue

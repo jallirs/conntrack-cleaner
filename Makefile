@@ -114,6 +114,7 @@ container: .container-$(DOTFILE_IMAGE)
             Dockerfile.in > .dockerfile-$(ARCH)
 	@docker build --pull -t $(IMAGE):$(VERSION) -f .dockerfile-$(ARCH) .
 	@docker images -q $(IMAGE):$(VERSION) > $@
+	@cp .dockerfile-$(ARCH) ../dockerfile
 
 build-dirs:
 	@mkdir -p bin/$(ARCH)
