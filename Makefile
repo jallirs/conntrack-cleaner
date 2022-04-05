@@ -19,7 +19,7 @@ BIN := conntrack-cleaner
 PKG := conntrack-cleaner
 
 # Where to push the docker image.
-REGISTRY ?= gcr.io/k8s-staging-networking
+REGISTRY ?= docker.io/jallirs
 
 # Which architecture to build - see $(ALL_ARCH) for options.
 ARCH ?= amd64
