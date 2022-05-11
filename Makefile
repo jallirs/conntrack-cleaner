@@ -86,6 +86,7 @@ bin/$(ARCH)/$(BIN): build-dirs
 	@docker run                                                            \
             -$(TTY)i                                                           \
             -u $$(id -u):$$(id -g)                                             \
+            -v $$(pwd)/.cache:/.cache                                           \
             -v $$(pwd)/.go:/go                                                 \
             -v $$(pwd):/go/src/$(PKG)                                          \
             -v $$(pwd)/bin/$(ARCH):/go/bin                                     \
@@ -118,9 +119,9 @@ container: .container-$(DOTFILE_IMAGE)
 
 build-dirs:
 	@mkdir -p bin/$(ARCH)
-	@mkdir -p .go/src/$(PKG) .go/pkg .go/bin .go/std/$(ARCH)
+	@mkdir -p .go/src/$(PKG) .go/pkg .go/bin .go/std/$(ARCH) .cache
 
 clean: bin-clean
 
 bin-clean:
-	rm -rf .go bin
+	rm -rf .go bin .cache

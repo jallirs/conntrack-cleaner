@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
+    "errors"
 	"k8s.io/klog"
 )
 
@@ -38,6 +38,8 @@ type conntrackCleaner struct {
 	connRenewalThreshold int
 	ciChannel            chan connectionInfo
 	connectionMap        map[string]connectionInfoStore
+	isUdpEnabled         bool
+	isTcpEnabled         bool
 }
 
 type connectionInfo struct {
@@ -56,15 +58,15 @@ func newConntrackCleaner(frequency time.Duration, threshold int,  udpEnabled boo
 		ciChannel:            make(chan connectionInfo),
 		connectionMap:        make(map[string]connectionInfoStore),
 		isUdpEnabled:         udpEnabled,
-		isTcpEnabled:         tcpEnabled
-	}
+		isTcpEnabled:         tcpEnabled}
 }
 
 func extractConnInfo(parsedEntry []string, entryLen int) (*connectionInfo, error) {
 	isUdp := contains(parsedEntry, "udp")
 	isTcp := contains(parsedEntry, "tcp")
+	var isSynSent bool
 	if isTcp == true {
-		isSynSent := contains(parsedEntry, "SYN_SENT")
+		isSynSent = contains(parsedEntry, "SYN_SENT")
 	}
 	//klog.Errorf("parsed entry 2 is : %v isUDP is %v", parsedEntry[2], strconv.FormatBool(isUdp))
 	//for index, entry := range parsedEntry {
@@ -89,7 +91,7 @@ func extractConnInfo(parsedEntry []string, entryLen int) (*connectionInfo, error
 		}, nil
 	}
 	if isTcp == true {
-		if isSynSent {
+		if isSynSent == true {
 			return &connectionInfo{
 				protocol:        "tcp",
 				expiryTime:      expTime,
@@ -98,9 +100,16 @@ func extractConnInfo(parsedEntry []string, entryLen int) (*connectionInfo, error
 				sourcePort:      strings.Split(parsedEntry[11], sourcePortStr)[1],
 				destinationPort: strings.Split(parsedEntry[12], destinationPortStr)[1],
 			}, nil
-		}
-
-	}
+		}}
+      return &connectionInfo{
+		protocol:        "unknownprotocol",
+		expiryTime:      expTime,
+		sourceIP:        strings.Split(parsedEntry[9], sourceIPStr)[1],
+		destinationIP:   strings.Split(parsedEntry[10], destinationIPStr)[1],
+		sourcePort:      strings.Split(parsedEntry[11], sourcePortStr)[1],
+		destinationPort: strings.Split(parsedEntry[12], destinationPortStr)[1],
+	}, errors.New("not a tcp or udp connection")
+	
 }
 
 func contains(s []string, str string) bool {
@@ -136,17 +145,18 @@ func (c *conntrackCleaner) processConntrackTable(table *bytes.Buffer) {
 	}
 }
 
-func executeCmd(output *bytes.Buffer, bool udpEnabled, bool tcpEnabled) error {
+func executeCmd(output *bytes.Buffer, udpEnabled bool, tcpEnabled bool) error {
 	var err error
+	var tcpConnList *exec.Cmd
 	if (udpEnabled) && (tcpEnabled) {
 		//both enabled
-		tcpConnList := exec.Command("conntrack", "-L")
+		tcpConnList = exec.Command("conntrack", "-L")
 	} else if (udpEnabled) && !(tcpEnabled) {
 		//only udp enabled
-		tcpConnList := exec.Command("conntrack", "-L", "-p udp")
+		tcpConnList = exec.Command("conntrack", "-L", "-p udp")
 	} else if !(udpEnabled) && (tcpEnabled) {
 		//only tcp enabled
-		tcpConnList := exec.Command("conntrack", "-L", "-p tcp")
+		tcpConnList = exec.Command("conntrack", "-L", "-p tcp")
 	}
 	//tcpConnList := exec.Command("conntrack", "-L")
 	grep := exec.Command("grep", "UNREPLIED")

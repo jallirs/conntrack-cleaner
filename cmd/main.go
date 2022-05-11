@@ -76,7 +76,7 @@ func getTcpCleaning() bool {
 }
 
 func getUdpCleaning() bool {
-	defaultTcpCleaningEnabled := true
+	defaultUdpCleaningEnabled := true
 	udpEnabled, ok := os.LookupEnv("UDP_CLEANING_ENABLED")
 	if !ok {
 		klog.Warning("UDP_CLEANING_ENABLED env variable not set in podspec. Taking default value as true")
