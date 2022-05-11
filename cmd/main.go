@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-	cleaner := newConntrackCleaner(getConntrackDumpFrequency(), getThreshold())
+	cleaner := newConntrackCleaner(getConntrackDumpFrequency(), getThreshold(), getUdpCleaning(), getTcpCleaning())
 	go cleaner.runConntrackTableDump()
 	cleaner.runConnCleaner()
 }
@@ -58,4 +58,34 @@ func getThreshold() int {
 		return defaultThreshold
 	}
 	return configuredThreshold
+}
+
+func getTcpCleaning() bool {
+	defaultTcpCleaningEnabled := false
+	tcpEnabled, ok := os.LookupEnv("TCP_CLEANING_ENABLED")
+	if !ok {
+		klog.Warning("TCP_CLEANING_ENABLED env variable not set in podspec. Taking default value as false")
+		return defaultTcpCleaningEnabled
+	}
+	configuredTcpCleaning, err := strconv.ParseBool(tcpEnabled)
+	if err != nil {
+		klog.Warning("invalid value given for TCP_CLEANING_ENABLED in podspec. Taking default value as false")
+		return defaultTcpCleaningEnabled
+	}
+	return configuredTcpCleaning
+}
+
+func getUdpCleaning() bool {
+	defaultTcpCleaningEnabled := true
+	udpEnabled, ok := os.LookupEnv("UDP_CLEANING_ENABLED")
+	if !ok {
+		klog.Warning("UDP_CLEANING_ENABLED env variable not set in podspec. Taking default value as true")
+		return defaultUdpCleaningEnabled
+	}
+	configuredUdpCleaning, err := strconv.ParseBool(udpEnabled)
+	if err != nil {
+		klog.Warning("invalid value given for UDP_CLEANING_ENABLED in podspec. Taking default value as true")
+		return defaultUdpCleaningEnabled
+	}
+	return configuredUdpCleaning
 }

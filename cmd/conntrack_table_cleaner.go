@@ -27,8 +27,9 @@ type connectionInfoStore struct {
 	connEntry                connectionInfo
 }
 
-func deleteStaleConnEntry(sourceIP string, destinationIP string) {
-	_, err := exec.Command("conntrack", "-D", "-s", sourceIP, "-d", destinationIP ).CombinedOutput()
+func deleteStaleConnEntry(sourceIP string, destinationIP string, protocol string, sourcePort string, destinationPort string) {
+
+	_, err := exec.Command("conntrack", "-D",  "-p", protocol, "-s", sourceIP, "-d", destinationIP, "--sport ", sourcePort, "--dport",  destinationPort).CombinedOutput()
 	if err != nil {
 		klog.Errorf("error deleting conntrack entry : %s", err)
 	}
@@ -53,7 +54,7 @@ func (c *conntrackCleaner) cleanStaleConntrackEntries(connInfo connectionInfo) {
 	if connInfo.expiryTime >= value.connEntry.expiryTime {
 		value.staleConnectionMarkCount++
 		if value.staleConnectionMarkCount > c.connRenewalThreshold {
-			deleteStaleConnEntry(connInfo.sourceIP, connInfo.destinationIP)
+			deleteStaleConnEntry(connInfo.sourceIP, connInfo.destinationIP, connInfo.protocol, connInfo.sourcePort, connInfo.destinationPort)
 			delete(c.connectionMap, key)
 		} else {
 			c.connectionMap[key] = value
