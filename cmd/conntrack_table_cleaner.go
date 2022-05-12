@@ -33,7 +33,7 @@ func deleteStaleConnEntry(sourceIP string, destinationIP string, protocol string
 			return
 		}	
 	}
-	if sourceIP == "127.0.0.1" && destinationIP == "127.0.0.1" {
+	if (sourceIP == "127.0.0.1") && (destinationIP == "127.0.0.1") {
 		return
 	}
 
