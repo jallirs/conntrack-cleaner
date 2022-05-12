@@ -153,10 +153,10 @@ func executeCmd(output *bytes.Buffer, udpEnabled bool, tcpEnabled bool) error {
 		tcpConnList = exec.Command("conntrack", "-L")
 	} else if (udpEnabled) && !(tcpEnabled) {
 		//only udp enabled
-		tcpConnList = exec.Command("conntrack", "-L", "-p udp")
+		tcpConnList = exec.Command("conntrack", "-L", "-p", "udp")
 	} else if !(udpEnabled) && (tcpEnabled) {
 		//only tcp enabled
-		tcpConnList = exec.Command("conntrack", "-L", "-p tcp")
+		tcpConnList = exec.Command("conntrack", "-L", "-p", "tcp")
 	}
 	//tcpConnList := exec.Command("conntrack", "-L")
 	grep := exec.Command("grep", "UNREPLIED")
