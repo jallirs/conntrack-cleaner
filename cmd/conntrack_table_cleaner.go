@@ -28,6 +28,11 @@ type connectionInfoStore struct {
 }
 
 func deleteStaleConnEntry(sourceIP string, destinationIP string, protocol string, sourcePort string, destinationPort string) {
+	if protocol == "udp" {
+		if sourcePort == "53" || destinationPort == "53" {
+			return
+		}	
+	}
 
 	_, err := exec.Command("conntrack", "-D",  "-p", protocol, "-s", sourceIP, "-d", destinationIP, "--sport ", sourcePort, "--dport",  destinationPort).CombinedOutput()
 	if err != nil {
