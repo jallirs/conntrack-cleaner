@@ -28,7 +28,7 @@ ARCH ?= amd64
 #VERSION := $(shell git describe --tags --always --dirty)
 #
 # This version-strategy uses a manual value to set the version string
-VERSION := 1.2.8
+VERSION := 1.2.9
 
 ###
 ### These variables should not need tweaking.
