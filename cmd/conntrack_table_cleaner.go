@@ -34,7 +34,7 @@ func deleteStaleConnEntry(sourceIP string, destinationIP string, protocol string
 		}	
 	}
 
-	_, err := exec.Command("conntrack", "-D",  "-p", protocol, "-s", sourceIP, "-d", destinationIP, "--sport ", sourcePort, "--dport",  destinationPort).CombinedOutput()
+	_, err := exec.Command("conntrack", "-D",  "-p", protocol, "-s", sourceIP, "-d", destinationIP, "--sport", sourcePort, "--dport",  destinationPort).CombinedOutput()
 	if err != nil {
 		klog.Errorf("error deleting conntrack entry : %s", err)
 	}
