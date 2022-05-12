@@ -33,7 +33,7 @@ func deleteStaleConnEntry(sourceIP string, destinationIP string, protocol string
 	if err != nil {
 		klog.Errorf("error deleting conntrack entry : %s", err)
 	}
-	klog.Warning("conntrack entry deleted successfully for sourceIP: %s, destinationIP: %s", sourceIP, destinationIP)
+	klog.Warning("conntrack entry deleted successfully for sourceIP: %s, destinationIP: %s ,   sourcePort: %s , destinationPort: %s protocol: %s ", sourceIP, destinationIP, sourcePort, destinationPort, protocol)
 	//klog.V(1).Infof("conntrack entry deleted successfully for sourceIP: %s, destinationIP: %s", sourceIP, destinationIP)
 }
 
