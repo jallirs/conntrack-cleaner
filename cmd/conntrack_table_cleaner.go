@@ -33,6 +33,9 @@ func deleteStaleConnEntry(sourceIP string, destinationIP string, protocol string
 			return
 		}	
 	}
+	if sourceIP == "127.0.0.1" && destinationIP == "127.0.0.1" {
+		return
+	}
 
 	_, err := exec.Command("conntrack", "-D",  "-p", protocol, "-s", sourceIP, "-d", destinationIP, "--sport", sourcePort, "--dport",  destinationPort).CombinedOutput()
 	if err != nil {
