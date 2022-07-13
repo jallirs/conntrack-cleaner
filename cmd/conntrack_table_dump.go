@@ -36,10 +36,13 @@ var (
 type conntrackCleaner struct {
 	tableDumpFrequency   time.Duration
 	connRenewalThreshold int
+	connPurgeThreshold   time.Duration
 	ciChannel            chan connectionInfo
 	connectionMap        map[string]connectionInfoStore
+	oldConnectionMap     map[string]connectionInfoStore
 	isUdpEnabled         bool
 	isTcpEnabled         bool
+	oldTableInitialized  bool
 }
 
 type connectionInfo struct {
@@ -51,14 +54,17 @@ type connectionInfo struct {
 	protocol        string
 }
 
-func newConntrackCleaner(frequency time.Duration, threshold int,  udpEnabled bool, tcpEnabled bool) *conntrackCleaner {
+func newConntrackCleaner(frequency time.Duration, threshold int,  udpEnabled bool, tcpEnabled bool, connPurgeThresholdValue time.Duration) *conntrackCleaner {
 	return &conntrackCleaner{
+		connPurgeThreshold:   connPurgeThresholdValue,
 		tableDumpFrequency:   frequency,
 		connRenewalThreshold: threshold,
 		ciChannel:            make(chan connectionInfo),
 		connectionMap:        make(map[string]connectionInfoStore),
+		oldConnectionMap:     make(map[string]connectionInfoStore),
 		isUdpEnabled:         udpEnabled,
-		isTcpEnabled:         tcpEnabled}
+		isTcpEnabled:         tcpEnabled,
+	    oldTableInitialized:  false}
 }
 
 func extractConnInfo(parsedEntry []string, entryLen int) (*connectionInfo, error) {
@@ -129,6 +135,49 @@ func parseConntrackTable(table string) []string {
 	return strings.Split(table, "\n")
 }
 
+// Copy values from one map to the other
+func copyMap() {
+
+}
+
+func (c *conntrackCleaner) cleanNCopyConntrackTable() {
+    // First run of the program, value is false
+	if c.oldTableInitialized == false {
+		for key, value := range c.connectionMap  {
+			c.oldConnectionMap[key] = value
+		  }
+		c.oldTableInitialized = true
+		return
+	}
+	// Every other time, we should have an old table
+	// Check to see if old entries are in new map or not
+	else {
+		currentTime := time.Now()
+		for oldKey := range c.oldConnectionMap  {
+			value, ok := c.connectionMap[oldKey]
+			if !ok {
+				// Eviction based on new table for values that might disappear between iterations
+				// Key is not in new dump, remove it from the old map
+				delete(c.oldConnectionMap, key)
+			}
+			else if (ok) && (value.firstSeen.Sub(currentTime).Seconds() >= c.connPurgeThreshold ) {
+			    // Time based eviction
+			   // Remove old values that are beyond this time anyway
+			   delete(c.connectionMap, key)
+			   delete(c.oldConnectionMap, key)
+			}  
+	
+		  }
+		  // Move New Conntrack Table to Old Conntrack Table
+		  // Todo: Functionalize this
+		  for key, value := range c.connectionMap  {
+			c.oldConnectionMap[key] = value
+		  }
+
+	}
+
+}
+
 func (c *conntrackCleaner) processConntrackTable(table *bytes.Buffer) {
 	entryList := parseConntrackTable(table.String())
 	for _, entry := range entryList {
@@ -143,6 +192,7 @@ func (c *conntrackCleaner) processConntrackTable(table *bytes.Buffer) {
 			c.ciChannel <- *connInfo
 		}
 	}
+	c.cleanNCopyConntrackTable()
 }
 
 func executeCmd(output *bytes.Buffer, udpEnabled bool, tcpEnabled bool) error {

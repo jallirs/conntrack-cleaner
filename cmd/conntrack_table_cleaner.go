@@ -25,6 +25,7 @@ import (
 type connectionInfoStore struct {
 	staleConnectionMarkCount int
 	connEntry                connectionInfo
+	firstSeen                time.Time
 }
 
 func deleteStaleConnEntry(sourceIP string, destinationIP string, protocol string, sourcePort string, destinationPort string) {
@@ -46,14 +47,14 @@ func deleteStaleConnEntry(sourceIP string, destinationIP string, protocol string
 }
 
 func getKeyForConnInfo(connInfo connectionInfo) string {
-	return connInfo.sourceIP + ":" + connInfo.sourcePort + ";" + connInfo.destinationIP + ":" + connInfo.destinationPort
+	return connInfo.sourceIP + ":" + connInfo.sourcePort + ";" + connInfo.destinationIP + ":" + connInfo.destinationPort + ";" + connInfo.protocol + ";"
 }
 
 func (c *conntrackCleaner) cleanStaleConntrackEntries(connInfo connectionInfo) {
 	key := getKeyForConnInfo(connInfo)
 	value, ok := c.connectionMap[key]
 	if !ok {
-		c.connectionMap[key] = connectionInfoStore{staleConnectionMarkCount: 0, connEntry: connInfo}
+		c.connectionMap[key] = connectionInfoStore{staleConnectionMarkCount: 0, connEntry: connInfo, firstSeen: time.Now()}
 		return
 	}
 	//staleConnectionMarkCount is incremented if expiry time is equal or greater
@@ -68,6 +69,7 @@ func (c *conntrackCleaner) cleanStaleConntrackEntries(connInfo connectionInfo) {
 			c.connectionMap[key] = value
 		}
 	}
+
 }
 
 func (c *conntrackCleaner) runConnCleaner() {

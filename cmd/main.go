@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-	cleaner := newConntrackCleaner(getConntrackDumpFrequency(), getThreshold(), getUdpCleaning(), getTcpCleaning())
+	cleaner := newConntrackCleaner(getConntrackDumpFrequency(), getConntrackPurgeThreshold(), getThreshold(), getUdpCleaning(), getTcpCleaning())
 	go cleaner.runConntrackTableDump()
 	cleaner.runConnCleaner()
 }
@@ -43,6 +43,20 @@ func getConntrackDumpFrequency() time.Duration {
 		return defaultDumpFrequency
 	}
 	return configuredDumpFrequency
+}
+func getConntrackPurgeThreshold() time.Duration {
+	defaultPurgeThreshold := time.Duration(60) * time.Second
+	purgeThreshold, ok := os.LookupEnv("CONNTRACK_PURGE_THRESHOLD")
+	if !ok {
+		klog.Warning("CONNTRACK_PURGE_THRESHOLD env variable not set in podspec. Taking default value as 60 sec")
+		return defaultPurgeThreshold
+	}
+	configuredPurgeThreshold, err := time.ParseDuration(purgeThreshold)
+	if err != nil {
+		klog.Warning("invalid value given for CONNTRACK_TABLE_DUMP_FREQUENCY in podspec. Taking default value as 1sec")
+		return defaultDumpFrequency
+	}
+	return configuredPurgeThreshold
 }
 
 func getThreshold() int {
