@@ -54,7 +54,7 @@ type connectionInfo struct {
 	protocol        string
 }
 
-func newConntrackCleaner(frequency time.Duration, threshold int,  udpEnabled bool, tcpEnabled bool, connPurgeThresholdValue time.Duration) *conntrackCleaner {
+func newConntrackCleaner(frequency time.Duration, connPurgeThresholdValue time.Duration, threshold int,  udpEnabled bool, tcpEnabled bool, ) *conntrackCleaner {
 	return &conntrackCleaner{
 		connPurgeThreshold:   connPurgeThresholdValue,
 		tableDumpFrequency:   frequency,
@@ -148,23 +148,19 @@ func (c *conntrackCleaner) cleanNCopyConntrackTable() {
 		  }
 		c.oldTableInitialized = true
 		return
-	}
-	// Every other time, we should have an old table
-	// Check to see if old entries are in new map or not
-	else {
+	} else {
 		currentTime := time.Now()
 		for oldKey := range c.oldConnectionMap  {
-			value, ok := c.connectionMap[oldKey]
+		    value, ok := c.connectionMap[oldKey]
 			if !ok {
 				// Eviction based on new table for values that might disappear between iterations
 				// Key is not in new dump, remove it from the old map
-				delete(c.oldConnectionMap, key)
-			}
-			else if (ok) && (value.firstSeen.Sub(currentTime).Seconds() >= c.connPurgeThreshold ) {
+				delete(c.oldConnectionMap, oldKey)
+			} else if (ok) && (value.firstSeen.Sub(currentTime).Seconds() >= c.connPurgeThreshold.Seconds() ) {
 			    // Time based eviction
 			   // Remove old values that are beyond this time anyway
-			   delete(c.connectionMap, key)
-			   delete(c.oldConnectionMap, key)
+			   delete(c.connectionMap, oldKey)
+			   delete(c.oldConnectionMap, oldKey)
 			}  
 	
 		  }

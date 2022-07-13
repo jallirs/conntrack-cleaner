@@ -54,7 +54,7 @@ func getConntrackPurgeThreshold() time.Duration {
 	configuredPurgeThreshold, err := time.ParseDuration(purgeThreshold)
 	if err != nil {
 		klog.Warning("invalid value given for CONNTRACK_TABLE_DUMP_FREQUENCY in podspec. Taking default value as 1sec")
-		return defaultDumpFrequency
+		return defaultPurgeThreshold
 	}
 	return configuredPurgeThreshold
 }
